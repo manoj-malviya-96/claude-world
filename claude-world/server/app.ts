@@ -11,8 +11,6 @@ import type { WorldState, ProjectInfo, ChatLog } from '../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT_DIR = path.join(__dirname, '../client'); // only present after `vite build`
-const HOST = '127.0.0.1'; // local-only: this process can spawn `claude` and kill pids, never expose it
-const PORT = process.env.AGENT_WORLD_PORT ? Number(process.env.AGENT_WORLD_PORT) : 4173;
 
 const MIME: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
 
@@ -107,7 +105,7 @@ async function handleReply(req: IncomingMessage, res: ServerResponse, sessionId:
     ['-p', '--resume', sessionId, message],
     { maxBuffer: 10 * 1024 * 1024 },
     (err, _stdout, stderr) => {
-      if (err) console.error(`[agent-world] reply to ${sessionId} failed:`, stderr || err.message);
+      if (err) console.error(`[csworld] reply to ${sessionId} failed:`, stderr || err.message);
     },
   );
   child.unref();
@@ -155,32 +153,33 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse): Promise<v
   }
 }
 
-const server = createServer(async (req, res) => {
-  const url = req.url ?? '/';
-  try {
-    if (req.method === 'GET' && url === '/api/state') {
-      return sendJson(res, 200, buildState());
+// The whole app: session polling, chat, reply, stop, and (once built) the
+// static client. Not listening yet - the CLI entrypoint owns the port/host
+// and what happens once it's up.
+export function createApp() {
+  return createServer(async (req, res) => {
+    const url = req.url ?? '/';
+    try {
+      if (req.method === 'GET' && url === '/api/state') {
+        return sendJson(res, 200, buildState());
+      }
+
+      const chatId = req.method === 'GET' ? sessionIdFromAgentsPath(url, '/chat') : null;
+      if (chatId) return await handleChat(res, chatId);
+
+      const replyId = req.method === 'POST' ? sessionIdFromAgentsPath(url, '/reply') : null;
+      if (replyId) return await handleReply(req, res, replyId);
+
+      const stopId = req.method === 'DELETE' ? sessionIdFromAgentsPath(url, '') : null;
+      if (stopId) return await handleStop(res, stopId);
+
+      if (req.method === 'GET') return await serveStatic(req, res);
+
+      res.writeHead(405);
+      res.end();
+    } catch (err) {
+      console.error('[csworld] request failed:', err);
+      sendJson(res, 500, { error: (err as Error).message });
     }
-
-    const chatId = req.method === 'GET' ? sessionIdFromAgentsPath(url, '/chat') : null;
-    if (chatId) return await handleChat(res, chatId);
-
-    const replyId = req.method === 'POST' ? sessionIdFromAgentsPath(url, '/reply') : null;
-    if (replyId) return await handleReply(req, res, replyId);
-
-    const stopId = req.method === 'DELETE' ? sessionIdFromAgentsPath(url, '') : null;
-    if (stopId) return await handleStop(res, stopId);
-
-    if (req.method === 'GET') return await serveStatic(req, res);
-
-    res.writeHead(405);
-    res.end();
-  } catch (err) {
-    console.error('[agent-world] request failed:', err);
-    sendJson(res, 500, { error: (err as Error).message });
-  }
-});
-
-server.listen(PORT, HOST, () => {
-  console.log(`agent-world API running at http://${HOST}:${PORT}`);
-});
+  });
+}

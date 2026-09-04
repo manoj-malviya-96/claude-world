@@ -4,7 +4,7 @@
 import { spawn } from 'node:child_process';
 
 const children = [
-  spawn('npx', ['tsx', 'watch', 'server/index.ts'], { stdio: 'inherit' }),
+  spawn('npx', ['tsx', 'watch', 'server/cli.ts', '--no-open'], { stdio: 'inherit' }),
   spawn('npx', ['vite'], { stdio: 'inherit' }),
 ];
 

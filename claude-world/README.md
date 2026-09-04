@@ -1,7 +1,7 @@
-# Agent World
+# Claude World
 
 A live, chattable island map of the Claude Code sessions running on this
-machine. TypeScript + Vite frontend, TypeScript API server.
+machine. Ships as `csworld`, an installable CLI.
 
 Each project is an island; each session (interactive or background) is a
 character with a deterministic, funny Hollywood-archetype avatar (e.g. "The
@@ -10,27 +10,43 @@ island - it sticks across reloads. Islands show what every agent is doing
 right now, flag any stuck on an unanswered `AskUserQuestion`, and open into a
 real chat thread pulled from that session's own transcript.
 
-## Run
+## Install and run
+
+```sh
+npm install -g @manoj-malviya-96/csworld
+csworld
+```
+
+This starts the server on **http://127.0.0.1:4173** (localhost only) and
+opens it in your browser. Useful flags:
+
+```sh
+csworld --port 4200   # use a different port
+csworld --no-open     # don't launch a browser
+```
+
+`CSWORLD_PORT` works as an env var alternative to `--port`.
+
+## Developing this package
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-This starts the API server (port 4173) and the Vite dev server (port 5173,
-proxying `/api` to the backend) side by side. Open **http://localhost:5173**.
-
-For a single-process, no-hot-reload run instead:
+Runs the API server (`tsx watch`, port 4173) and the Vite dev server (port
+5173, proxying `/api` to the backend) side by side with hot reload. Open
+whatever port Vite prints.
 
 ```sh
-pnpm start
+pnpm build   # compile server + bundle client into dist/
+pnpm start   # build, then run the real CLI entrypoint once
 ```
 
-This builds the client and server once and serves everything from
-**http://127.0.0.1:4173**. Both bind to localhost only.
-
-Pick a different backend port with `AGENT_WORLD_PORT=<port>` (set it before
-either command; `pnpm dev` reads it into the Vite proxy target too).
+`vite` and `typescript` are devDependencies only - the published package has
+zero runtime dependencies, so `npm install -g` stays fast and the CLI starts
+instantly. `dist/` (prebuilt client + compiled server) is what actually ships;
+`prepublishOnly` rebuilds it automatically before `npm publish`.
 
 ## Interacting with an agent
 

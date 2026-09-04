@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
-const backendPort = process.env.AGENT_WORLD_PORT ?? '4173';
+const backendPort = process.env.CSWORLD_PORT ?? '4173';
 
 export default defineConfig({
   build: {

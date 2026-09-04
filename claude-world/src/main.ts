@@ -55,7 +55,7 @@ async function refresh(): Promise<void> {
     }
   } catch (err) {
     errorEl.hidden = false;
-    errorEl.textContent = `Couldn't reach agent-world server: ${(err as Error).message}`;
+    errorEl.textContent = `Couldn't reach csworld server: ${(err as Error).message}`;
   }
 }
 
