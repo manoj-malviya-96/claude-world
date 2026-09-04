@@ -1,0 +1,22 @@
+{
+  "name": "claude-world",
+  "version": "0.1.0",
+  "description": "A live, chattable island map of your local Claude Code sessions.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "tsc -p tsconfig.server.json && vite build",
+    "start": "tsc -p tsconfig.server.json && vite build && node dist/server/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
