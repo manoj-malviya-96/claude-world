@@ -1,0 +1,24 @@
+{
+  "name": "@manoj-malviya-96/csworld",
+  "version": "0.0.0",
+  "description": "Local web viewer for browsing your Claude Code session transcripts",
+  "type": "module",
+  "bin": {
+    "csworld": "dist/server/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manoj-malviya-96/heavy-coders.git",
+    "directory": "claude-world"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
