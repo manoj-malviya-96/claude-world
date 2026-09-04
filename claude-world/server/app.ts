@@ -18,35 +18,43 @@ function projectNameFromCwd(cwd: string): string {
   return cwd.split('/').filter(Boolean).pop() ?? cwd;
 }
 
-function buildState(): WorldState {
-  const sessions = listSessions();
+async function buildState(): Promise<WorldState> {
+  const sessions = await listSessions();
+  // Each session's transcript lives in its own file, so tailing them is
+  // independent I/O - run them concurrently instead of one at a time.
+  const agents = await Promise.all(
+    sessions.map(async (session) => {
+      const activity = await readActivity(session.cwd, session.sessionId);
+      const avatar = avatarFor(session.sessionId);
+      const pid = session.pid ?? null;
+      return {
+        cwd: session.cwd,
+        agent: {
+          sessionId: session.sessionId,
+          pid,
+          kind: session.kind,
+          status: session.status ?? session.state ?? 'unknown',
+          startedAt: session.startedAt,
+          displayName: nameFor(session.sessionId, session.name),
+          avatarName: avatar.name,
+          avatarEmoji: avatar.emoji,
+          avatarColor: avatar.color,
+          lastActivity: activity.lastActivity,
+          lastTimestamp: activity.lastTimestamp,
+          pendingQuestion: activity.pendingQuestion,
+          canReply: session.kind === 'background' && session.status === 'idle',
+          canStop: session.kind === 'background' && pid !== null,
+        },
+      };
+    }),
+  );
+
   const byProject = new Map<string, ProjectInfo>();
-
-  for (const session of sessions) {
-    const activity = readActivity(session.cwd, session.sessionId);
-    const avatar = avatarFor(session.sessionId);
-    const pid = session.pid ?? null;
-    const status = session.status ?? session.state ?? 'unknown';
-
-    if (!byProject.has(session.cwd)) {
-      byProject.set(session.cwd, { path: session.cwd, name: projectNameFromCwd(session.cwd), agents: [] });
+  for (const { cwd, agent } of agents) {
+    if (!byProject.has(cwd)) {
+      byProject.set(cwd, { path: cwd, name: projectNameFromCwd(cwd), agents: [] });
     }
-    byProject.get(session.cwd)!.agents.push({
-      sessionId: session.sessionId,
-      pid,
-      kind: session.kind,
-      status,
-      startedAt: session.startedAt,
-      displayName: nameFor(session.sessionId, session.name),
-      avatarName: avatar.name,
-      avatarEmoji: avatar.emoji,
-      avatarColor: avatar.color,
-      lastActivity: activity.lastActivity,
-      lastTimestamp: activity.lastTimestamp,
-      pendingQuestion: activity.pendingQuestion,
-      canReply: session.kind === 'background' && session.status === 'idle',
-      canStop: session.kind === 'background' && pid !== null,
-    });
+    byProject.get(cwd)!.agents.push(agent);
   }
 
   return { projects: Array.from(byProject.values()), updatedAt: new Date().toISOString() };
@@ -70,10 +78,10 @@ function sessionIdFromAgentsPath(url: string, suffix: string): string | null {
 }
 
 async function handleChat(res: ServerResponse, sessionId: string): Promise<void> {
-  const sessions = listSessions();
+  const sessions = await listSessions();
   const session = findSession(sessions, sessionId);
   if (!session) return sendJson(res, 404, { error: 'unknown session' });
-  const messages = readChatLog(session.cwd, sessionId);
+  const messages = await readChatLog(session.cwd, sessionId);
   const payload: ChatLog = { sessionId, messages };
   sendJson(res, 200, payload);
 }
@@ -94,7 +102,7 @@ async function handleReply(req: IncomingMessage, res: ServerResponse, sessionId:
     return sendJson(res, 400, { error: 'message is required' });
   }
 
-  const sessions = listSessions();
+  const sessions = await listSessions();
   const session = findSession(sessions, sessionId);
   if (!session || session.kind !== 'background' || session.status !== 'idle') {
     return sendJson(res, 409, { error: 'that agent is not an idle background session, so it cannot be reached from here' });
@@ -117,7 +125,7 @@ async function handleReply(req: IncomingMessage, res: ServerResponse, sessionId:
 // scoped tight: only background agents (never a live interactive terminal
 // someone is actively typing in) and only when we have a pid to signal.
 async function handleStop(res: ServerResponse, sessionId: string): Promise<void> {
-  const sessions = listSessions();
+  const sessions = await listSessions();
   const session = findSession(sessions, sessionId);
   if (!session) return sendJson(res, 404, { error: 'unknown session' });
   if (session.kind !== 'background') {
@@ -161,7 +169,7 @@ export function createApp() {
     const url = req.url ?? '/';
     try {
       if (req.method === 'GET' && url === '/api/state') {
-        return sendJson(res, 200, buildState());
+        return sendJson(res, 200, await buildState());
       }
 
       const chatId = req.method === 'GET' ? sessionIdFromAgentsPath(url, '/chat') : null;

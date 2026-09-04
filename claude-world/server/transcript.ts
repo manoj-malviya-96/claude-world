@@ -1,4 +1,4 @@
-import { openSync, fstatSync, readSync, closeSync } from 'node:fs';
+import { open } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import type { ChatMessage } from '../shared/types.js';
@@ -40,23 +40,23 @@ function transcriptPath(cwd: string, sessionId: string): string {
   return path.join(projectDirFor(cwd), `${sessionId}.jsonl`);
 }
 
-function tailFile(filePath: string, maxBytes: number): string {
-  const fd = openSync(filePath, 'r');
+async function tailFile(filePath: string, maxBytes: number): Promise<string> {
+  const handle = await open(filePath, 'r');
   try {
-    const size = fstatSync(fd).size;
+    const { size } = await handle.stat();
     const start = Math.max(0, size - maxBytes);
     const buf = Buffer.alloc(size - start);
-    readSync(fd, buf, 0, buf.length, start);
+    await handle.read(buf, 0, buf.length, start);
     return buf.toString('utf8');
   } finally {
-    closeSync(fd);
+    await handle.close();
   }
 }
 
-function readLines(filePath: string, maxBytes: number): TranscriptEntry[] {
+async function readLines(filePath: string, maxBytes: number): Promise<TranscriptEntry[]> {
   let text: string;
   try {
-    text = tailFile(filePath, maxBytes);
+    text = await tailFile(filePath, maxBytes);
   } catch {
     return [];
   }
@@ -115,8 +115,8 @@ export interface Activity {
 // Reads the tail of a session's own transcript to answer two things a live
 // process list can't: what is it doing right now, and is it stuck waiting on
 // an unanswered AskUserQuestion.
-export function readActivity(cwd: string, sessionId: string): Activity {
-  const entries = readLines(transcriptPath(cwd, sessionId), ACTIVITY_TAIL_BYTES);
+export async function readActivity(cwd: string, sessionId: string): Promise<Activity> {
+  const entries = await readLines(transcriptPath(cwd, sessionId), ACTIVITY_TAIL_BYTES);
   const resolvedToolUseIds = new Set<string>();
   const askQuestions = new Map<string, string>();
   let lastActivity: string | null = null;
@@ -152,8 +152,8 @@ export function readActivity(cwd: string, sessionId: string): Activity {
 // A readable chat thread: real user/assistant text turns, with tool calls
 // collapsed into short system lines. Tool results are omitted - they're
 // usually too large and raw to read as "chat".
-export function readChatLog(cwd: string, sessionId: string, limit = 40): ChatMessage[] {
-  const entries = readLines(transcriptPath(cwd, sessionId), CHAT_TAIL_BYTES);
+export async function readChatLog(cwd: string, sessionId: string, limit = 40): Promise<ChatMessage[]> {
+  const entries = await readLines(transcriptPath(cwd, sessionId), CHAT_TAIL_BYTES);
   const messages: ChatMessage[] = [];
 
   for (const entry of entries) {
