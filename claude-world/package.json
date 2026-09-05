@@ -9,6 +9,19 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "tsc -p tsconfig.server.json && vite build",
+    "start": "npm run build && node dist/server/cli.js",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  },
   "engines": {
     "node": ">=18"
   },
@@ -19,6 +32,7 @@
     "directory": "claude-world"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://npm.pkg.github.com"
   }
 }

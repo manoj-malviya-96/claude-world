@@ -59,3 +59,11 @@ export function avatarFor(sessionId) {
 export function nameFor(sessionId, displayName) {
     return displayName?.trim() ? displayName : `Agent ${sessionId.slice(0, 4)}`;
 }
+// Same word lists as avatarFor, salted differently so an island's name never
+// collides with an agent avatar name derived from the same string.
+export function islandNameFor(projectPath) {
+    const h = hash(`island:${projectPath}`);
+    const prefix = PREFIXES[h % PREFIXES.length];
+    const archetype = ARCHETYPES[Math.floor(h / PREFIXES.length) % ARCHETYPES.length];
+    return `${prefix} ${archetype.noun}`;
+}

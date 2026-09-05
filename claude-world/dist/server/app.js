@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listSessions, findSession } from './sessions.js';
 import { readActivity, readChatLog } from './transcript.js';
-import { avatarFor, nameFor } from './avatars.js';
+import { avatarFor, nameFor, islandNameFor } from './avatars.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT_DIR = path.join(__dirname, '../client'); // only present after `vite build`
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
@@ -43,7 +43,7 @@ async function buildState() {
     const byProject = new Map();
     for (const { cwd, agent } of agents) {
         if (!byProject.has(cwd)) {
-            byProject.set(cwd, { path: cwd, name: projectNameFromCwd(cwd), agents: [] });
+            byProject.set(cwd, { path: cwd, name: projectNameFromCwd(cwd), islandName: islandNameFor(cwd), agents: [] });
         }
         byProject.get(cwd).agents.push(agent);
     }
