@@ -15,10 +15,18 @@ jobs:
         with:
           ref: master
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: https://npm.pkg.github.com
+
+      - name: Install dependencies
+        working-directory: claude-world
+        run: pnpm install --frozen-lockfile
 
       - name: Set package version to match release tag
         working-directory: claude-world
