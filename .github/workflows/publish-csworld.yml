@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
+          registry-url: https://npm.pkg.github.com
 
       - name: Set package version to match release tag
         working-directory: claude-world
@@ -31,8 +32,8 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: release csworld ${GITHUB_REF_NAME}"
           git push origin HEAD:master
 
-      - name: Publish to npm
+      - name: Publish to GitHub Packages
         working-directory: claude-world
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

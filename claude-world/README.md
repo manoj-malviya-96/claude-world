@@ -12,6 +12,17 @@ real chat thread pulled from that session's own transcript.
 
 ## Install and run
 
+Published to GitHub Packages, not npmjs.org, so npm needs to know where to
+find the `@manoj-malviya-96` scope and needs a token to read it (GitHub
+Packages requires auth even for public packages). Add to `~/.npmrc`:
+
+```
+@manoj-malviya-96:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=<a GitHub PAT with read:packages>
+```
+
+Then:
+
 ```sh
 npm install -g @manoj-malviya-96/csworld
 csworld
