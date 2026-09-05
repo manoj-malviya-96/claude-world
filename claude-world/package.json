@@ -1,6 +1,6 @@
 {
   "name": "@manoj-malviya-96/csworld",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Local web viewer for browsing your Claude Code session transcripts",
   "type": "module",
   "bin": {
