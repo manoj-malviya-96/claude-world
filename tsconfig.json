@@ -11,5 +11,8 @@
     "noEmit": true,
     "strict": true
   },
-  "include": ["src", "shared"]
+  "include": [
+    "src",
+    "shared"
+  ]
 }

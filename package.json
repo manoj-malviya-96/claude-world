@@ -28,8 +28,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/manoj-malviya-96/heavy-coders.git",
-    "directory": "claude-world"
+    "url": "git+https://github.com/manoj-malviya-96/claude-code.git"
   },
   "publishConfig": {
     "access": "public",

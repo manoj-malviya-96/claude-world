@@ -25,7 +25,6 @@ jobs:
           registry-url: https://npm.pkg.github.com
 
       - name: Install dependencies
-        working-directory: claude-world
         run: pnpm install --frozen-lockfile
 
       - name: Set package version to match release tag
